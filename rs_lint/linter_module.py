@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from .linter_rule import LinterRule
 
+
 @dataclass
 class LinterModule:
     name: str
