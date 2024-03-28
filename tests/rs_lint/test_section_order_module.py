@@ -100,5 +100,12 @@ def test_get_pre_content_template_types(module):
             when it was unusual for women to be pilots. 
             """
     )
-    values = [t.value for t in module.get_pre_content_template_types(article)]
+    types = list(module.get_pre_content_template_types(article))
+    assert types == [
+        TemplateType.SHORT_DESCRIPTION,
+        TemplateType.FEATURED_ARTICLE,
+        TemplateType.DATE_FORMAT,
+        TemplateType.INFOBOX,
+    ]
+    values = [t.value for t in types]
     assert sorted(values) == values

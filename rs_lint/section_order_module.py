@@ -23,7 +23,9 @@ class TemplateType(Enum):
     SHORT_DESCRIPTION = 1
     TITLE_MODIFIER = 2
     HATNOTE = 3
-    ARTICLE_STATUS = 4
+    FEATURED_ARTICLE = 4
+    FEATURED_LIST = 4
+    GOOD_ARTICLE = 4
     DELETION_PROTECTION_TAG = 5
     MAINTENANCE_TAG = 6
     ENGLISH_VARIETY = 7
@@ -32,6 +34,17 @@ class TemplateType(Enum):
     LANGUAGE_MAINTENANCE = 9
     IMAGE = 10  # Not really a template, but pretending it is simplifies things
     NAVIGATION_HEADER = 11
+
+
+TEMPLATE_TYPE_MAP = {
+    "short description": TemplateType.SHORT_DESCRIPTION,
+    "shortdescription": TemplateType.SHORT_DESCRIPTION,
+    "featured article": TemplateType.FEATURED_ARTICLE,
+    "featured list": TemplateType.FEATURED_LIST,
+    "good article": TemplateType.GOOD_ARTICLE,
+    "use mdy dates": TemplateType.DATE_FORMAT,
+    "use dmy dates": TemplateType.DATE_FORMAT,
+}
 
 
 @dataclass
@@ -46,19 +59,10 @@ class SectionOrderModule(LinterModule):
             else:
                 return
 
-    def one_of(self: Self, template: Template, names):
-        for name in names:
-            if template.name.matches(name):
-                return True
-        return False
-
     def classify_template(self: Self, template: Template):
-        if self.one_of(template, ["short description", "shortdescription"]):
-            return TemplateType.SHORT_DESCRIPTION
-        if self.one_of(template, ["featured article", "featured list", "good article"]):
-            return TemplateType.ARTICLE_STATUS
-        if self.one_of(template, ["use mdy dates", "use dmy dates"]):
-            return TemplateType.DATE_FORMAT
+        for name, template_type in TEMPLATE_TYPE_MAP.items():
+            if template.name.matches(name):
+                return template_type
         if template.name.lower().startswith("infobox"):
             return TemplateType.INFOBOX
         return None
