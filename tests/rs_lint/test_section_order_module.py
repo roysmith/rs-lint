@@ -30,34 +30,6 @@ def test_construct(module):
     assert module.name == "SectionOrder"
 
 
-@pytest.mark.parametrize(
-    "text, expected_result",
-    [
-        (
-            "",
-            "",
-        ),
-        (
-            "==Foo==\nblah\n",
-            "",
-        ),
-        (
-            "{{xxx}}\n==Foo==\nbar\n",
-            "{{xxx}}\n",
-        ),
-        (
-            "{{abc}}\n{{xyz}}\n==Foo==\nblah, blah\n",
-            "{{abc}}\n{{xyz}}\n",
-        ),
-    ],
-)
-def test_get_pre_content_code(module, text, expected_result):
-    article = Article(text)
-    result = module.get_pre_content_code(article)
-    assert isinstance(result, Wikicode)
-    assert result == expected_result
-
-
 def test_get_pre_content_templates(module):
     article = make_article(
         """\

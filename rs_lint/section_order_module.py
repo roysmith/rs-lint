@@ -9,7 +9,16 @@ from rs_lint import LinterModule, Article
 
 
 class TemplateType(Enum):
-    """See [[en:MOS:ORDER]]"""
+    """See [[en:MOS:ORDER]].  Multiple enums can have the same
+    value, indicating they are on the same ordering level.  For
+    example:
+
+      7. Templates relating to English variety and date format
+
+    gives rise to both ENGLISH_VARIETY and DATE_FORMAT having the
+    same value.  Keeping them as distinct enums can allow for richer
+    error eporting.
+    """
 
     SHORT_DESCRIPTION = 1
     TITLE_MODIFIER = 2
@@ -17,7 +26,7 @@ class TemplateType(Enum):
     ARTICLE_STATUS = 4
     DELETION_PROTECTION_TAG = 5
     MAINTENANCE_TAG = 6
-    ENGLISH_VARIANT = 7
+    ENGLISH_VARIETY = 7
     DATE_FORMAT = 7
     INFOBOX = 8
     LANGUAGE_MAINTENANCE = 9
@@ -27,13 +36,9 @@ class TemplateType(Enum):
 
 @dataclass
 class SectionOrderModule(LinterModule):
-    def get_pre_content_code(self: Self, article: Article) -> Wikicode:
-        sections = article.code.get_sections()
-        return sections[0]
 
     def get_pre_content_templates(self: Self, article: Article):
-        code = self.get_pre_content_code(article)
-        for node in code.nodes:
+        for node in article.code.nodes:
             if isinstance(node, Text) and str(node).strip() == "":
                 continue
             if isinstance(node, Template):
