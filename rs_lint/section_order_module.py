@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Self
+from typing import Self, Iterator
 
 from mwparserfromhell.wikicode import Wikicode
 from mwparserfromhell.nodes import Text, Template
@@ -47,6 +47,18 @@ TEMPLATE_TYPE_MAP = {
 }
 
 
+@dataclass(frozen=True)
+class TemplateInfo:
+    template: Template
+    template_type: TemplateType
+
+
+@dataclass(frozen=True)
+class Nit:
+    info: TemplateInfo
+    message: str
+
+
 @dataclass
 class SectionOrderModule(LinterModule):
 
@@ -67,6 +79,14 @@ class SectionOrderModule(LinterModule):
             return TemplateType.INFOBOX
         return None
 
-    def get_pre_content_template_types(self, article):
+    def get_pre_content_template_info(self, article) -> Iterator[TemplateInfo]:
         for template in self.get_pre_content_templates(article):
-            yield self.classify_template(template)
+            yield TemplateInfo(template, self.classify_template(template))
+
+    def get_nits(self: Self, article: Article) -> Iterator[Nit]:
+        last_value = 0
+        for info in self.get_pre_content_template_info(article):
+            value = info.template_type.value
+            if value < last_value:
+                yield Nit(info, "pre-content template out of order")
+            last_value = value

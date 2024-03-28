@@ -4,7 +4,7 @@ import pytest
 from mwparserfromhell.wikicode import Wikicode, Template
 
 from rs_lint import SectionOrderModule, Article
-from rs_lint.section_order_module import TemplateType
+from rs_lint.section_order_module import TemplateType, TemplateInfo, Nit
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def test_classify_template(module, name, template_type):
     assert module.classify_template(template) == template_type
 
 
-def test_get_pre_content_template_types(module):
+def test_get_pre_content_template_info(module):
     article = make_article(
         """\
             {{short description|American aviator (1916–2019)}}
@@ -69,7 +69,7 @@ def test_get_pre_content_template_types(module):
             when it was unusual for women to be pilots. 
             """
     )
-    types = list(module.get_pre_content_template_types(article))
+    types = [i.template_type for i in module.get_pre_content_template_info(article)]
     assert types == [
         TemplateType.SHORT_DESCRIPTION,
         TemplateType.FEATURED_ARTICLE,
@@ -78,3 +78,41 @@ def test_get_pre_content_template_types(module):
     ]
     values = [t.value for t in types]
     assert sorted(values) == values
+
+
+def make_nit(name: str, ttype: TemplateType) -> Nit:
+    return Nit(
+        TemplateInfo(Template(name), ttype),
+        "pre-content template out of order",
+    )
+
+
+@pytest.mark.parametrize(
+    "text, expected_nits",
+    [
+        (
+            # All in correct order
+            "{{short description}} {{Featured article}} {{Use mdy dates}} {{Infobox aviator}}",
+            [],
+        ),
+        (
+            # One out of order
+            "{{short description}} {{use mdy dates}} {{Featured article}} {{Infobox aviator}}",
+            [
+                make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
+            ],
+        ),
+        (
+            # Two out of order
+            "{{Use mdy dates}} {{Featured article}} {{short description}}",
+            [
+                make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
+                make_nit("short description", TemplateType.SHORT_DESCRIPTION),
+            ],
+        ),
+    ],
+)
+def test_get_nits(module, text, expected_nits):
+    article = make_article(text)
+    nits = list(module.get_nits(article))
+    assert nits == expected_nits
