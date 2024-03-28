@@ -59,7 +59,7 @@ class SectionOrderModule(LinterModule):
             else:
                 return
 
-    def classify_template(self: Self, template: Template):
+    def classify_template(self: Self, template: Template) -> TemplateType:
         for name, template_type in TEMPLATE_TYPE_MAP.items():
             if template.name.matches(name):
                 return template_type
