@@ -41,9 +41,6 @@ class SectionOrderModule(LinterModule):
             else:
                 return
 
-    def is_short_description(self: Self, template: Template):
-        return template.name.matches("short description")
-
     def one_of(self: Self, template: Template, names):
         for name in names:
             if template.name.matches(name):
