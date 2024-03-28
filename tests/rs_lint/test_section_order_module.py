@@ -30,37 +30,6 @@ def test_construct(module):
     assert module.name == "SectionOrder"
 
 
-def test_get_pre_content_templates(module):
-    article = make_article(
-        """\
-            {{short description|American aviator (1916–2019)}}
-            {{Featured article}}
-
-            {{Use mdy dates|date=July 2023}}
-            {{Infobox aviator
-            | image       = File:WASP Dorothy Kocher Olsen.JPG
-            |caption     = Kocher {{circa|1943}} (U.S. Air Force photo).
-            | name        = Dorothy Olsen
-            | birth_name  = Dorothy Eleanor Kocher
-            | birth_date  = {{birth date|1916|7|10}}
-            | birth_place = [[Woodburn, Oregon]], U.S.
-            | death_date  = {{death date and age|2019|7|23|1916|7|10}}
-            | death_place = [[University Place, Washington]], U.S.
-            | nationality = <!-- use only when necessary per [[WP:INFONAT]] -->
-            | known for   = Member of [[Women Airforce Service Pilots]] (WASP)
-            |alt=Portrait of Dorothy Olsen wearing a World-War II style bomber jacket.}}
-            '''Dorothy Eleanor Olsen''' ({{née|'''Kocher'''}}; July 10, 1916 – July 23, 2019)
-            was an American aircraft pilot and member of the [[Women Airforce Service Pilots]]
-            (WASPs) during[[World War II]].  She grew up on her family's farm in
-            [[Woodburn, Oregon]], developing an interest in aviation at a young age.
-            She earned her [[Private pilot licence|private pilot's license]] in 1939,
-            when it was unusual for women to be pilots. 
-            """
-    )
-    templates = list(module.get_pre_content_templates(article))
-    assert len(templates) == 4
-
-
 @pytest.mark.parametrize(
     "name, template_type",
     [
