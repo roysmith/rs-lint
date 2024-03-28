@@ -13,6 +13,4 @@ pluggy==1.4.0
 pytest==8.1.1
 pytest-socket==0.7.0
 requests==2.31.0
-# Editable Git install with no remote (rs_lint==0.0.1)
--e /Users/roysmith/dev/rs-lint/src
 urllib3==2.2.1
