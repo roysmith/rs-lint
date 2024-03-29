@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import re
 from typing import Self, Iterator
 
 from mwparserfromhell.wikicode import Wikicode
@@ -36,6 +37,9 @@ class TemplateType(Enum):
     NAVIGATION_HEADER = 11
 
 
+# Keys can be either strings of compiled regular expressions.  For strings,
+# the template is compared to the string using Wikicode.matches().  For regexes,
+# the normalized template name is tested using re.Pattern.match().
 TEMPLATE_TYPE_MAP = {
     "short description": TemplateType.SHORT_DESCRIPTION,
     "shortdescription": TemplateType.SHORT_DESCRIPTION,
@@ -44,6 +48,7 @@ TEMPLATE_TYPE_MAP = {
     "good article": TemplateType.GOOD_ARTICLE,
     "use mdy dates": TemplateType.DATE_FORMAT,
     "use dmy dates": TemplateType.DATE_FORMAT,
+    re.compile("infobox "): TemplateType.INFOBOX,
 }
 
 
@@ -62,9 +67,12 @@ class Nit:
 @dataclass
 class SectionOrderModule(LinterModule):
 
-    def get_pre_content_templates(self: Self, article: Article):
+    def get_pre_content_templates(self: Self, article: Article) -> Iterator[Template]:
+        """Gets all the templates which appear before the first real text
+        in the article.  Blank lines (and other whitespace) are ignored.
+        """
         for node in article.code.nodes:
-            if isinstance(node, Text) and str(node).strip() == "":
+            if node.strip() == "":
                 continue
             if isinstance(node, Template):
                 yield node
@@ -73,10 +81,11 @@ class SectionOrderModule(LinterModule):
 
     def classify_template(self: Self, template: Template) -> TemplateType:
         for name, template_type in TEMPLATE_TYPE_MAP.items():
-            if template.name.matches(name):
+            tname = template.name
+            if isinstance(name, str) and tname.matches(name):
                 return template_type
-        if template.name.lower().startswith("infobox"):
-            return TemplateType.INFOBOX
+            if isinstance(name, re.Pattern) and name.match(tname.lower()):
+                return template_type
         return None
 
     def get_pre_content_template_info(self, article) -> Iterator[TemplateInfo]:
