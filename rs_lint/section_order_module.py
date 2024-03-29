@@ -43,6 +43,9 @@ class TemplateType(Enum):
 TEMPLATE_TYPE_MAP = {
     "short description": TemplateType.SHORT_DESCRIPTION,
     "shortdescription": TemplateType.SHORT_DESCRIPTION,
+    "DISPLAYTITLE": TemplateType.TITLE_MODIFIER,
+    "lowercase title": TemplateType.TITLE_MODIFIER,
+    "italic title": TemplateType.TITLE_MODIFIER,
     "featured article": TemplateType.FEATURED_ARTICLE,
     "featured list": TemplateType.FEATURED_LIST,
     "good article": TemplateType.GOOD_ARTICLE,
