@@ -70,6 +70,18 @@ class Nit:
 @dataclass
 class SectionOrderModule:
 
+    def get_nits(self: Self, article: Article) -> Iterator[Nit]:
+        last_value = 0
+        for info in self.get_pre_content_template_info(article):
+            value = info.template_type.value
+            if value < last_value:
+                yield Nit(info, "pre-content template out of order")
+            last_value = value
+
+    def get_pre_content_template_info(self, article) -> Iterator[TemplateInfo]:
+        for template in self.get_pre_content_templates(article):
+            yield TemplateInfo(template, self.classify_template(template))
+
     def get_pre_content_templates(self: Self, article: Article) -> Iterator[Template]:
         """Gets all the templates which appear before the first real text
         in the article.  Blank lines (and other whitespace) are ignored.
@@ -90,15 +102,3 @@ class SectionOrderModule:
             if isinstance(name, re.Pattern) and name.match(tname.lower()):
                 return template_type
         return None
-
-    def get_pre_content_template_info(self, article) -> Iterator[TemplateInfo]:
-        for template in self.get_pre_content_templates(article):
-            yield TemplateInfo(template, self.classify_template(template))
-
-    def get_nits(self: Self, article: Article) -> Iterator[Nit]:
-        last_value = 0
-        for info in self.get_pre_content_template_info(article):
-            value = info.template_type.value
-            if value < last_value:
-                yield Nit(info, "pre-content template out of order")
-            last_value = value
