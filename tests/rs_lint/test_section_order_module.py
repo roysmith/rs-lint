@@ -26,10 +26,6 @@ def make_article(text: str) -> Article:
     return Article(dedent(text))
 
 
-def test_construct(module):
-    assert module.name == "SectionOrder"
-
-
 @pytest.mark.parametrize(
     "name, template_type",
     [

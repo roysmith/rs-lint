@@ -6,7 +6,7 @@ from typing import Self, Iterator
 from mwparserfromhell.wikicode import Wikicode
 from mwparserfromhell.nodes import Text, Template
 
-from rs_lint import LinterModule, Article
+from rs_lint import Article
 
 
 class TemplateType(Enum):
@@ -68,7 +68,7 @@ class Nit:
 
 
 @dataclass
-class SectionOrderModule(LinterModule):
+class SectionOrderModule:
 
     def get_pre_content_templates(self: Self, article: Article) -> Iterator[Template]:
         """Gets all the templates which appear before the first real text
