@@ -82,7 +82,9 @@ class SectionOrderModule:
 
     def get_pre_content_templates(self: Self, article: Article) -> Iterator[Template]:
         """Gets all the templates which appear before the first real text
-        in the article.  Blank lines (and other whitespace) are ignored.
+        in the article (i.e. before the lead).  Blank lines (and other
+        whitespace) are ignored.
+
         """
         for node in article.code.nodes:
             if node.strip() == "":
