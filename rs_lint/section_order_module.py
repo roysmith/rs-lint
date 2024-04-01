@@ -38,7 +38,7 @@ class TemplateType(Enum):
     NAVIGATION_HEADER = 11
 
 
-# Keys can be either strings of compiled regular expressions.  For strings,
+# Keys can be either strings or compiled regular expressions.  For strings,
 # the template is compared to the string using Wikicode.matches().  For regexes,
 # the normalized template name is tested using re.Pattern.match().
 TEMPLATE_TYPE_MAP = {
@@ -108,3 +108,5 @@ class SectionOrderModule:
         page = Page(self.site, f"Template:{template.name}")
         effective_page = page.getRedirectTarget() if page.isRedirectPage() else page
         return Template(effective_page.title(with_ns=False))
+    
+    def get_hatnote_templates(self: Self)
