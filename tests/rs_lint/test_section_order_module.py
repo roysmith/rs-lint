@@ -49,9 +49,19 @@ def test_classify_template(
     assert module.classify_template(Template(template_name)) == expected_template_type
 
 
-def test_get_pre_content_template_info(mocker, module):
-    article = make_article(
-        """\
+def make_nit(name: str, ttype: TemplateType) -> Nit:
+    return Nit(
+        TemplateInfo(Template(name), ttype),
+        "pre-content template out of order",
+    )
+
+
+@pytest.mark.parametrize(
+    "text, expected_nits",
+    [
+        (
+            # Realistic example
+            """\
             {{short description|American aviator (1916–2019)}}
             {{Featured article}}
 
@@ -74,81 +84,17 @@ def test_get_pre_content_template_info(mocker, module):
             [[Woodburn, Oregon]], developing an interest in aviation at a young age.
             She earned her [[Private pilot licence|private pilot's license]] in 1939,
             when it was unusual for women to be pilots. 
-            """
-    )
-    mock_classify_template = mocker.patch(
-        "rs_lint.section_order_module.SectionOrderModule.classify_template",
-        autospec=True,
-    )
-    mock_classify_template.side_effect = [
-        TemplateType.SHORT_DESCRIPTION,
-        TemplateType.FEATURED_ARTICLE,
-        TemplateType.DATE_FORMAT,
-        TemplateType.INFOBOX,
-    ]
-
-    types = [i.template_type for i in module.get_pre_content_template_info(article)]
-
-    assert types == [
-        TemplateType.SHORT_DESCRIPTION,
-        TemplateType.FEATURED_ARTICLE,
-        TemplateType.DATE_FORMAT,
-        TemplateType.INFOBOX,
-    ]
-    values = [t.value for t in types]
-    assert sorted(values) == values
-
-    calls = mock_classify_template.call_args_list
-    assert [c.args[1].name.strip() for c in calls] == [
-        "short description",
-        "Featured article",
-        "Use mdy dates",
-        "Infobox aviator",
-    ]
-
-
-def make_nit(name: str, ttype: TemplateType) -> Nit:
-    return Nit(
-        TemplateInfo(Template(name), ttype),
-        "pre-content template out of order",
-    )
-
-
-@pytest.mark.parametrize(
-    "text, names, ttypes, expected_nits",
-    [
+            """,
+            [],
+        ),
         (
             # All in correct order
             "{{short description}} {{Featured article}} {{Use mdy dates}} {{Infobox aviator}}",
-            [
-                "short description",
-                "Featured article",
-                "Use mdy dates",
-                "Infobox aviation",
-            ],
-            [
-                TemplateType.SHORT_DESCRIPTION,
-                TemplateType.FEATURED_ARTICLE,
-                TemplateType.DATE_FORMAT,
-                TemplateType.INFOBOX,
-            ],
             [],
         ),
         (
             # One out of order
             "{{short description}} {{use mdy dates}} {{Featured article}} {{Infobox aviator}}",
-            [
-                "short description",
-                "Use mdy dates",
-                "Featured article",
-                "Infobox aviation",
-            ],
-            [
-                TemplateType.SHORT_DESCRIPTION,
-                TemplateType.DATE_FORMAT,
-                TemplateType.FEATURED_ARTICLE,
-                TemplateType.INFOBOX,
-            ],
             [
                 make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
             ],
@@ -157,32 +103,25 @@ def make_nit(name: str, ttype: TemplateType) -> Nit:
             # Two out of order
             "{{Use mdy dates}} {{Featured article}} {{short description}}",
             [
-                "Use mdy dates",
-                "Featured article",
-                "short description",
-            ],
-            [
-                TemplateType.DATE_FORMAT,
-                TemplateType.FEATURED_ARTICLE,
-                TemplateType.SHORT_DESCRIPTION,
-            ],
-            [
                 make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
                 make_nit("short description", TemplateType.SHORT_DESCRIPTION),
             ],
         ),
     ],
 )
-def test_get_nits(mocker, module, text, names, ttypes, expected_nits):
+def test_get_nits(mocker, module, text, expected_nits):
     article = make_article(text)
 
-    mock_get_pre_content_template_info = mocker.patch(
-        "rs_lint.section_order_module.SectionOrderModule.get_pre_content_template_info",
-        autospec=True,
-    )
-    mock_get_pre_content_template_info.return_value = [
-        TemplateInfo(Template(name), ttype) for name, ttype in zip(names, ttypes)
-    ]
+    def f(self, template: Template):
+        if template.name == "shortdescription":
+            return Template("short description", template.params)
+        else:
+            return template
 
+    mock_get_effective_template = mocker.patch(
+        "rs_lint.section_order_module.SectionOrderModule.get_effective_template",
+        autospec=True,
+        side_effect=f,
+    )
     nits = list(module.get_nits(article))
     assert nits == expected_nits
