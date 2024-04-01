@@ -1,3 +1,4 @@
+from unittest.mock import call, ANY
 from textwrap import dedent
 
 import pytest
@@ -8,8 +9,14 @@ from rs_lint.section_order_module import TemplateType, TemplateInfo, Nit
 
 
 @pytest.fixture
-def module():
-    return SectionOrderModule()
+def module(site):
+    return SectionOrderModule(site)
+
+
+@pytest.fixture
+def page(mocker, site):
+    mock_Page = mocker.patch("rs_lint.section_order_module.Page", autospec=True)
+    return mock_Page(site)
 
 
 def make_article(text: str) -> Article:
@@ -27,18 +34,22 @@ def make_article(text: str) -> Article:
 
 
 @pytest.mark.parametrize(
-    "name, template_type",
+    "template_name, redirect_name, expected_template_type",
     [
-        ("short description", TemplateType.SHORT_DESCRIPTION),
-        ("shortdescription", TemplateType.SHORT_DESCRIPTION),
+        ("short description", None, TemplateType.SHORT_DESCRIPTION),
+        ("shortdescription", "short description", TemplateType.SHORT_DESCRIPTION),
     ],
 )
-def test_classify_template(module, name, template_type):
-    template = Template(name)
-    assert module.classify_template(template) == template_type
+def test_classify_template(
+    module, page, template_name, redirect_name, expected_template_type
+):
+    page.title.return_value = template_name
+    page.isRedirectPage.return_value = redirect_name is not None
+    page.getRedirectTarget().title.return_value = redirect_name
+    assert module.classify_template(Template(template_name)) == expected_template_type
 
 
-def test_get_pre_content_template_info(module):
+def test_get_pre_content_template_info(mocker, module):
     article = make_article(
         """\
             {{short description|American aviator (1916–2019)}}
@@ -65,7 +76,19 @@ def test_get_pre_content_template_info(module):
             when it was unusual for women to be pilots. 
             """
     )
+    mock_classify_template = mocker.patch(
+        "rs_lint.section_order_module.SectionOrderModule.classify_template",
+        autospec=True,
+    )
+    mock_classify_template.side_effect = [
+        TemplateType.SHORT_DESCRIPTION,
+        TemplateType.FEATURED_ARTICLE,
+        TemplateType.DATE_FORMAT,
+        TemplateType.INFOBOX,
+    ]
+
     types = [i.template_type for i in module.get_pre_content_template_info(article)]
+
     assert types == [
         TemplateType.SHORT_DESCRIPTION,
         TemplateType.FEATURED_ARTICLE,
@@ -74,6 +97,14 @@ def test_get_pre_content_template_info(module):
     ]
     values = [t.value for t in types]
     assert sorted(values) == values
+
+    calls = mock_classify_template.call_args_list
+    assert [c.args[1].name.strip() for c in calls] == [
+        "short description",
+        "Featured article",
+        "Use mdy dates",
+        "Infobox aviator",
+    ]
 
 
 def make_nit(name: str, ttype: TemplateType) -> Nit:
@@ -84,16 +115,40 @@ def make_nit(name: str, ttype: TemplateType) -> Nit:
 
 
 @pytest.mark.parametrize(
-    "text, expected_nits",
+    "text, names, ttypes, expected_nits",
     [
         (
             # All in correct order
             "{{short description}} {{Featured article}} {{Use mdy dates}} {{Infobox aviator}}",
+            [
+                "short description",
+                "Featured article",
+                "Use mdy dates",
+                "Infobox aviation",
+            ],
+            [
+                TemplateType.SHORT_DESCRIPTION,
+                TemplateType.FEATURED_ARTICLE,
+                TemplateType.DATE_FORMAT,
+                TemplateType.INFOBOX,
+            ],
             [],
         ),
         (
             # One out of order
             "{{short description}} {{use mdy dates}} {{Featured article}} {{Infobox aviator}}",
+            [
+                "short description",
+                "Use mdy dates",
+                "Featured article",
+                "Infobox aviation",
+            ],
+            [
+                TemplateType.SHORT_DESCRIPTION,
+                TemplateType.DATE_FORMAT,
+                TemplateType.FEATURED_ARTICLE,
+                TemplateType.INFOBOX,
+            ],
             [
                 make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
             ],
@@ -102,13 +157,32 @@ def make_nit(name: str, ttype: TemplateType) -> Nit:
             # Two out of order
             "{{Use mdy dates}} {{Featured article}} {{short description}}",
             [
+                "Use mdy dates",
+                "Featured article",
+                "short description",
+            ],
+            [
+                TemplateType.DATE_FORMAT,
+                TemplateType.FEATURED_ARTICLE,
+                TemplateType.SHORT_DESCRIPTION,
+            ],
+            [
                 make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
                 make_nit("short description", TemplateType.SHORT_DESCRIPTION),
             ],
         ),
     ],
 )
-def test_get_nits(module, text, expected_nits):
+def test_get_nits(mocker, module, text, names, ttypes, expected_nits):
     article = make_article(text)
+
+    mock_get_pre_content_template_info = mocker.patch(
+        "rs_lint.section_order_module.SectionOrderModule.get_pre_content_template_info",
+        autospec=True,
+    )
+    mock_get_pre_content_template_info.return_value = [
+        TemplateInfo(Template(name), ttype) for name, ttype in zip(names, ttypes)
+    ]
+
     nits = list(module.get_nits(article))
     assert nits == expected_nits

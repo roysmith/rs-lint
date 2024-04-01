@@ -5,6 +5,7 @@ from typing import Self, Iterator
 
 from mwparserfromhell.wikicode import Wikicode
 from mwparserfromhell.nodes import Text, Template
+from pywikibot import Site, Page
 
 from rs_lint import Article
 
@@ -42,7 +43,6 @@ class TemplateType(Enum):
 # the normalized template name is tested using re.Pattern.match().
 TEMPLATE_TYPE_MAP = {
     "short description": TemplateType.SHORT_DESCRIPTION,
-    "shortdescription": TemplateType.SHORT_DESCRIPTION,
     "DISPLAYTITLE": TemplateType.TITLE_MODIFIER,
     "lowercase title": TemplateType.TITLE_MODIFIER,
     "italic title": TemplateType.TITLE_MODIFIER,
@@ -69,6 +69,7 @@ class Nit:
 
 @dataclass
 class SectionOrderModule:
+    site: Site
 
     def get_nits(self: Self, article: Article) -> Iterator[Nit]:
         last_value = 0
@@ -95,10 +96,16 @@ class SectionOrderModule:
                 return
 
     def classify_template(self: Self, template: Template) -> TemplateType:
+        tname = self.get_effective_template(template).name
         for name, template_type in TEMPLATE_TYPE_MAP.items():
-            tname = template.name
             if isinstance(name, str) and tname.matches(name):
                 return template_type
             if isinstance(name, re.Pattern) and name.match(tname.lower()):
                 return template_type
         return None
+
+    def get_effective_template(self, template) -> Template:
+        """Return the template, following the redirect, if any."""
+        page = Page(self.site, f"Template:{template.name}")
+        effective_page = page.getRedirectTarget() if page.isRedirectPage() else page
+        return Template(effective_page.title(with_ns=False))
