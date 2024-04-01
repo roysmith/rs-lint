@@ -101,7 +101,7 @@ class SectionOrderModule:
                 return template_type
         return None
 
-    def get_effective_template(self, template) -> Template:
+    def get_effective_template(self: Self, template: Template) -> Template:
         """Return the template, following the redirect, if any."""
         page = Page(self.site, f"Template:{template.name}")
         effective_page = page.getRedirectTarget() if page.isRedirectPage() else page
