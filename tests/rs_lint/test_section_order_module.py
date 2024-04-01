@@ -107,6 +107,16 @@ def make_nit(name: str, ttype: TemplateType) -> Nit:
                 make_nit("short description", TemplateType.SHORT_DESCRIPTION),
             ],
         ),
+        (
+            # Empty article
+            "",
+            [],
+        ),
+        (
+            # No templates
+            "This is the article text",
+            [],
+        ),
     ],
 )
 def test_get_nits(mocker, module, text, expected_nits):
