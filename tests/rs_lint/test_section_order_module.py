@@ -5,11 +5,16 @@ import pytest
 from mwparserfromhell.wikicode import Wikicode, Template
 
 from rs_lint import SectionOrderModule, Article
-from rs_lint.section_order_module import TemplateType, TemplateInfo, Nit
+from rs_lint.section_order_module import PreContent, NodeInfo, Nit
 
 
 @pytest.fixture
-def module(site):
+def module(mocker, site):
+    mock_get_hatnote_templates = mocker.patch(
+        "rs_lint.section_order_module.SectionOrderModule.get_hatnote_templates",
+        autospec=True,
+    )
+    mock_get_hatnote_templates.return_value = [Template("redirect")]
     return SectionOrderModule(site)
 
 
@@ -36,23 +41,23 @@ def make_article(text: str) -> Article:
 @pytest.mark.parametrize(
     "template_name, redirect_name, expected_template_type",
     [
-        ("short description", None, TemplateType.SHORT_DESCRIPTION),
-        ("shortdescription", "short description", TemplateType.SHORT_DESCRIPTION),
+        ("short description", None, PreContent.SHORT_DESCRIPTION),
+        ("shortdescription", "short description", PreContent.SHORT_DESCRIPTION),
     ],
 )
-def test_classify_template(
+def test_classify_node(
     module, page, template_name, redirect_name, expected_template_type
 ):
     page.title.return_value = template_name
     page.isRedirectPage.return_value = redirect_name is not None
     page.getRedirectTarget().title.return_value = redirect_name
-    assert module.classify_template(Template(template_name)) == expected_template_type
+    assert module.classify_node(Template(template_name)) == expected_template_type
 
 
-def make_nit(name: str, ttype: TemplateType) -> Nit:
+def make_nit(name: str, ttype: PreContent) -> Nit:
     return Nit(
-        TemplateInfo(Template(name), ttype),
-        "pre-content template out of order",
+        NodeInfo(Template(name), ttype),
+        "pre-content node out of order",
     )
 
 
@@ -88,6 +93,30 @@ def make_nit(name: str, ttype: TemplateType) -> Nit:
             [],
         ),
         (
+            # Realistic example with an image
+            """\
+                {{Short description|Proposed nuclear radiation detecting cat}}
+                {{redirect|Raycats|the song|Age Of{{!}}''Age Of''}}
+                {{Use dmy dates|date=March 2024}}
+                [[File:Green glowing cat.png|thumb|An artist's impression of a ray cat]]
+                A '''ray cat'''{{efn||name=name}} is a proposed kind of [[cat]]
+                """,
+            [],
+        ),
+        (
+            # Image in wrong order
+            """\
+                {{Short description|Proposed nuclear radiation detecting cat}}
+                {{redirect|Raycats|the song|Age Of{{!}}''Age Of''}}
+                [[File:Green glowing cat.png|thumb|An artist's impression of a ray cat]]
+                {{Use dmy dates|date=March 2024}}
+                A '''ray cat'''{{efn||name=name}} is a proposed kind of [[cat]]
+                """,
+            [
+                make_nit("Use dmy dates|date=March 2024", PreContent.ENGLISH_OR_DATE),
+            ],
+        ),
+        (
             # All in correct order
             "{{short description}} {{Featured article}} {{Use mdy dates}} {{Infobox aviator}}",
             [],
@@ -96,15 +125,15 @@ def make_nit(name: str, ttype: TemplateType) -> Nit:
             # One out of order
             "{{short description}} {{use mdy dates}} {{Featured article}} {{Infobox aviator}}",
             [
-                make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
+                make_nit("Featured article", PreContent.FEATURED_ARTICLE),
             ],
         ),
         (
             # Two out of order
             "{{Use mdy dates}} {{Featured article}} {{short description}}",
             [
-                make_nit("Featured article", TemplateType.FEATURED_ARTICLE),
-                make_nit("short description", TemplateType.SHORT_DESCRIPTION),
+                make_nit("Featured article", PreContent.FEATURED_ARTICLE),
+                make_nit("short description", PreContent.SHORT_DESCRIPTION),
             ],
         ),
         (
