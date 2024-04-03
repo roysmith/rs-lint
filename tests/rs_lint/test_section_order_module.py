@@ -10,11 +10,10 @@ from rs_lint.section_order_module import PreContent, NodeInfo, Nit
 
 @pytest.fixture
 def module(mocker, site):
-    mock_get_hatnote_templates = mocker.patch(
-        "rs_lint.section_order_module.SectionOrderModule.get_hatnote_templates",
-        autospec=True,
-    )
-    mock_get_hatnote_templates.return_value = [Template("redirect")]
+    mock_Category = mocker.patch("rs_lint.section_order_module.Category", autospec=True)
+    mock_Category(site).articles.return_value = [
+        mocker.Mock(**{"title.return_value": "redirect"})
+    ]
     return SectionOrderModule(site)
 
 
