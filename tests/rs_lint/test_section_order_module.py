@@ -145,6 +145,15 @@ def make_nit(name: str, ttype: PreContent) -> Nit:
             "This is the article text",
             [],
         ),
+        (
+            # No lead section
+            """\
+                {{short description}}
+                ==Blah==
+                This is not the lead
+                """,
+            [],
+        ),
     ],
 )
 def test_get_nits(mocker, module, text, expected_nits):
