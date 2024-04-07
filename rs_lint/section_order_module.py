@@ -92,6 +92,10 @@ class SectionOrderModule:
             else:
                 return
 
+    def get_elements(self: Self, article: Article) -> Iterator[Node]:
+        for node in self.get_pre_content_nodes(article):
+            yield node
+
     def classify_node(self: Self, node: Node) -> PreContent:
         if isinstance(node, Wikilink) and node.title.startswith("File:"):
             return PreContent.IMAGE

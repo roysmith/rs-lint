@@ -53,6 +53,17 @@ def test_classify_node(
     assert module.classify_node(Template(template_name)) == expected_template_type
 
 
+@pytest.mark.parametrize(
+    "text, expected_types",
+    [
+        ("", []),
+    ],
+)
+def test_get_elements(module, text, expected_types):
+    article = make_article(text)
+    assert list(module.get_elements(article)) == expected_types
+
+
 def make_nit(name: str, ttype: PreContent) -> Nit:
     return Nit(
         NodeInfo(Template(name), ttype),
