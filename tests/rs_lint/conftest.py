@@ -3,10 +3,10 @@ import pytest_socket
 import pywikibot
 
 
-def pytest_runtest_setup():
-    # If you are using VS Code, See
-    # https://github.com/microsoft/vscode-python/issues/22383#issuecomment-1949198679
-    pytest_socket.disable_socket()
+# def pytest_runtest_setup():
+#     # If you are using VS Code, See
+#     # https://github.com/microsoft/vscode-python/issues/22383#issuecomment-1949198679
+#     pytest_socket.disable_socket()
 
 
 @pytest.fixture(autouse=True)

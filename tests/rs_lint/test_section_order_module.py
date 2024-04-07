@@ -2,7 +2,7 @@ from unittest.mock import call, ANY
 from textwrap import dedent
 
 import pytest
-from mwparserfromhell.wikicode import Wikicode, Template
+from mwparserfromhell.wikicode import Wikicode, Template, Wikilink
 
 from rs_lint import SectionOrderModule, Article
 from rs_lint.section_order_module import PreContent, NodeInfo, Nit
@@ -56,12 +56,20 @@ def test_classify_node(
 @pytest.mark.parametrize(
     "text, expected_types",
     [
-        ("", []),
+        (
+            "",
+            [],
+        ),
+        (
+            "{{short description}} [[File:X]]",
+            [Template("short description"), Wikilink("File:X")],
+        ),
     ],
 )
 def test_get_elements(module, text, expected_types):
     article = make_article(text)
-    assert list(module.get_elements(article)) == expected_types
+    types = list(module.get_elements(article))
+    assert types == expected_types
 
 
 def make_nit(name: str, ttype: PreContent) -> Nit:
