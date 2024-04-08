@@ -10,7 +10,7 @@ from pywikibot import Site, Page, Category
 from rs_lint import Article
 
 
-class PreContent(Enum):
+class Element(Enum):
     "See [[en:MOS:ORDER]]."
 
     SHORT_DESCRIPTION = 1
@@ -32,23 +32,23 @@ class PreContent(Enum):
 # the node is compared to the string using Wikicode.matches().  For regexes,
 # the normalized node name is tested using re.Pattern.match().
 NODE_TYPE_MAP_PRELOAD = {
-    "short description": PreContent.SHORT_DESCRIPTION,
-    "DISPLAYTITLE": PreContent.TITLE_MODIFIER,
-    "lowercase title": PreContent.TITLE_MODIFIER,
-    "italic title": PreContent.TITLE_MODIFIER,
-    "featured article": PreContent.FEATURED_ARTICLE,
-    "featured list": PreContent.FEATURED_LIST,
-    "good article": PreContent.GOOD_ARTICLE,
-    "use mdy dates": PreContent.ENGLISH_OR_DATE,
-    "use dmy dates": PreContent.ENGLISH_OR_DATE,
-    re.compile("infobox "): PreContent.INFOBOX,
+    "short description": Element.SHORT_DESCRIPTION,
+    "DISPLAYTITLE": Element.TITLE_MODIFIER,
+    "lowercase title": Element.TITLE_MODIFIER,
+    "italic title": Element.TITLE_MODIFIER,
+    "featured article": Element.FEATURED_ARTICLE,
+    "featured list": Element.FEATURED_LIST,
+    "good article": Element.GOOD_ARTICLE,
+    "use mdy dates": Element.ENGLISH_OR_DATE,
+    "use dmy dates": Element.ENGLISH_OR_DATE,
+    re.compile("infobox "): Element.INFOBOX,
 }
 
 
 @dataclass(frozen=True)
 class NodeInfo:
     node: Node
-    node_type: PreContent
+    node_type: Element
 
 
 @dataclass(frozen=True)
@@ -65,7 +65,7 @@ class SectionOrderModule:
     def __post_init__(self: Self):
         self.node_type_map = dict(NODE_TYPE_MAP_PRELOAD)
         for template in self.get_hatnote_templates():
-            self.node_type_map[str(template.name)] = PreContent.HATNOTE
+            self.node_type_map[str(template.name)] = Element.HATNOTE
 
     def get_nits(self: Self, article: Article) -> Iterator[Nit]:
         last_value = 0
@@ -99,9 +99,9 @@ class SectionOrderModule:
         for node in self.get_pre_content_nodes(article):
             yield node
 
-    def classify_node(self: Self, node: Node) -> PreContent:
+    def classify_node(self: Self, node: Node) -> Element:
         if isinstance(node, Wikilink) and node.title.startswith("File:"):
-            return PreContent.IMAGE
+            return Element.IMAGE
         tname = self.get_effective_template(node).name
         for name, node_type in self.node_type_map.items():
             if isinstance(name, str) and tname.matches(name):

@@ -5,7 +5,7 @@ import pytest
 from mwparserfromhell.wikicode import Wikicode, Template, Wikilink
 
 from rs_lint import SectionOrderModule, Article
-from rs_lint.section_order_module import PreContent, NodeInfo, Nit
+from rs_lint.section_order_module import Element, NodeInfo, Nit
 
 
 @pytest.fixture
@@ -40,8 +40,8 @@ def make_article(text: str) -> Article:
 @pytest.mark.parametrize(
     "template_name, redirect_name, expected_template_type",
     [
-        ("short description", None, PreContent.SHORT_DESCRIPTION),
-        ("shortdescription", "short description", PreContent.SHORT_DESCRIPTION),
+        ("short description", None, Element.SHORT_DESCRIPTION),
+        ("shortdescription", "short description", Element.SHORT_DESCRIPTION),
     ],
 )
 def test_classify_node(
@@ -72,7 +72,7 @@ def test_get_elements(module, text, expected_types):
     assert types == expected_types
 
 
-def make_nit(name: str, ttype: PreContent) -> Nit:
+def make_nit(name: str, ttype: Element) -> Nit:
     return Nit(
         NodeInfo(Template(name), ttype),
         "pre-content node out of order",
@@ -131,7 +131,7 @@ def make_nit(name: str, ttype: PreContent) -> Nit:
                 A '''ray cat'''{{efn||name=name}} is a proposed kind of [[cat]]
                 """,
             [
-                make_nit("Use dmy dates|date=March 2024", PreContent.ENGLISH_OR_DATE),
+                make_nit("Use dmy dates|date=March 2024", Element.ENGLISH_OR_DATE),
             ],
         ),
         (
@@ -143,15 +143,15 @@ def make_nit(name: str, ttype: PreContent) -> Nit:
             # One out of order
             "{{short description}} {{use mdy dates}} {{Featured article}} {{Infobox aviator}}",
             [
-                make_nit("Featured article", PreContent.FEATURED_ARTICLE),
+                make_nit("Featured article", Element.FEATURED_ARTICLE),
             ],
         ),
         (
             # Two out of order
             "{{Use mdy dates}} {{Featured article}} {{short description}}",
             [
-                make_nit("Featured article", PreContent.FEATURED_ARTICLE),
-                make_nit("short description", PreContent.SHORT_DESCRIPTION),
+                make_nit("Featured article", Element.FEATURED_ARTICLE),
+                make_nit("short description", Element.SHORT_DESCRIPTION),
             ],
         ),
         (
