@@ -82,12 +82,15 @@ class SectionOrderModule:
         other whitespace) are ignored.
 
         """
-        for node in article.code.nodes:
+        while (node := article.peek()) is not None:
             if node.strip() == "":
+                article.advance()
                 continue
             elif isinstance(node, Template):
+                article.advance()
                 yield node
             elif isinstance(node, Wikilink) and node.title.startswith("File:"):
+                article.advance()
                 yield node
             else:
                 return
