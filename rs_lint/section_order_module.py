@@ -95,8 +95,18 @@ class SectionOrderModule:
             else:
                 return
 
+    def get_content_nodes(self: Self, article: Article) -> Iterator[Node]:
+        found_lead = False
+        while (node := article.peek()) is not None:
+            if not found_lead:
+                if "__TOC__" in node:
+                    found_lead = True
+        return
+
     def get_elements(self: Self, article: Article) -> Iterator[Node]:
         for node in self.get_pre_content_nodes(article):
+            yield node
+        for node in self.get_content_nodes(article):
             yield node
 
     def classify_node(self: Self, node: Node) -> Element:
