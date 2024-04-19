@@ -26,6 +26,10 @@ class Article:
         return node
 
     def peek(self):
+        """Return the next node, without moving the iterator.
+        Returns None when there are no nodes left.
+
+        """
         try:
             node = self.code.nodes[self.node_index]
         except IndexError:
